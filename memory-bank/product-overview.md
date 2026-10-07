@@ -1,0 +1,7 @@
+# Descripción del producto
+
+- ✅ Panel financiero con frontend React + TypeScript y backend FastAPI. Fuente: [README.es.md](../README.es.md#L18).
+- ✅ La pantalla compone KPI de ingresos, gastos, beneficio y margen; también muestra gráficos de ingresos/gastos y margen porcentual. Fuentes: [kpi-row.tsx](../frontend/src/components/dashboard/kpi-row.tsx#L15), [kpi-row.tsx](../frontend/src/components/dashboard/kpi-row.tsx#L23), [kpi-row.tsx](../frontend/src/components/dashboard/kpi-row.tsx#L30), [kpi-row.tsx](../frontend/src/components/dashboard/kpi-row.tsx#L38), [income-outcome-chart.tsx](../frontend/src/components/dashboard/income-outcome-chart.tsx#L69), [profit-percent-chart.tsx](../frontend/src/components/dashboard/profit-percent-chart.tsx#L70).
+- ✅ `App` solicita `GET /api/metrics` y calcula KPI y totales mensuales. Fuente: [App.tsx](../frontend/src/App.tsx#L16), [App.tsx](../frontend/src/App.tsx#L32).
+- ✅ La ruta genera 360 movimientos simulados con semilla 42; la fecha de hoy participa en la asignación de años. Fuentes: [routes.py](../backend/app/routes.py#L97), [routes.py](../backend/app/routes.py#L99), [routes.py](../backend/app/routes.py#L101), [routes.py](../backend/app/routes.py#L255).
+- ✅ `mockMovements` existe, pero `App` consume la API y el informe registra que la búsqueda solo encontró la declaración. Fuentes: [mock-data.ts](../frontend/src/lib/mock-data.ts#L3), [App.tsx](../frontend/src/App.tsx#L16), [verification.md](../verification.md#L40).
