@@ -30,3 +30,36 @@
 - Si las URLs responden al iniciar servicios; se validó `docker compose config`, pero no se arrancó Compose.
 - Si `http://localhost:8000/docs` responde; la URL está en README, pero no se probó contra un backend activo ([README.es.md](README.es.md#L50)).
 - Ejecución efectiva de los tests, una vez disponibles Vitest y Pytest. El repo no declara un script de test para backend.
+
+## Validación operativa de las 12 reglas
+
+Se eligió para cada regla una revisión pequeña de su área y se ejecutó su comprobación prescrita o, cuando el host no tenía dependencias, la misma suite dentro de los contenedores del proyecto. No se modificó código de la aplicación. Las seis reglas que necesitaron instrucciones más precisas se editaron y se volvió a ejecutar su check.
+
+| Regla | Qué pide y qué parte afecta | Tarea, comprobación y resultado real | ¿Ayudó? |
+|---|---|---|---|
+| `check-mock-data-references-before-changing-data-source` | Seguir referencias a mocks y confirmar la fuente real del dashboard (`frontend/src`). | `rg` no está instalado. El fallback nuevo `grep -R -n --exclude-dir=node_modules "mockMovements" frontend/src` halló solo `frontend/src/lib/mock-data.ts:3`; `App.tsx` usa `fetch(.../api/metrics)`. | ✅ Tras añadir fallback para `grep`. |
+| `keep-agent-directory-docs-in-sync` | Mantener coherente el árbol de `.agents` con los README. | `find .agents -maxdepth 3 -type f` listó 12 reglas y ningún skill. Los README dicen “estructura esperada”; aclarada esa distinción, la ausencia de `.agents/skills` no contradice lo documentado. | ✅ |
+| `keep-compose-api-proxy-target-valid` | Alinear proxy Vite con servicio backend y probar el flujo API (Vite, Compose). | `docker compose config`: válido; host `http://localhost:8000/api/metrics`: HTTP 200; proxy `http://localhost:5173/api/metrics`: HTTP 502. Desde frontend, `backend` resolvió a `172.18.0.2`, pero la conexión a `backend:8000` agotó el tiempo. Se aclaró el criterio y el diagnóstico en la regla; el fallo de runtime persiste. | ✅ Detectó una discrepancia real entre configuración y conectividad. |
+| `keep-period-label-aligned-with-generated-data` | Comparar etiqueta y fechas generadas (dashboard/API). | `GET /api/metrics`: 360 filas; fechas `2025-10-02` a `2026-09-28`; `App.tsx` aún muestra `2024 - Full Year`. La comparación detectó el desfase. | ✅ |
+| `keep-vite-and-typescript-aliases-aligned` | Mantener igual el alias `@` (Vite/TypeScript). | `docker compose exec frontend npm run build`: TypeScript y Vite completaron; `2290 modules transformed`, build correcto. Hubo aviso de chunk >500 kB. En host faltaba `tsc`. | ✅ |
+| `place-frontend-code-by-responsibility` | Separar dashboard, UI reutilizable y lógica/tipos (`frontend/src`). | `find frontend/src/components -maxdepth 2 -type f` mostró componentes dashboard y UI en sus carpetas; revisión de imports confirmó que dashboard consume UI y `lib`. | ✅ |
+| `review-cors-origins-and-credentials-together` | Revisar orígenes permitidos junto con credenciales (FastAPI CORS). | Preflight para `http://localhost:5173`: HTTP 200, `Access-Control-Allow-Origin` exacto y `Access-Control-Allow-Credentials: true`. El preflight negativo para `https://example.invalid` también lo autorizó con credenciales. Se añadió esta prueba negativa a la regla y se repitió: confirmó el mismo permiso. | ✅ Detectó política demasiado amplia; no se cambió el backend. |
+| `review-debugger-listener-and-port-publication-together` | Revisar listener, publicación y necesidad según entorno (debugpy/Compose). | `backend/Dockerfile` escucha en `0.0.0.0:5678`; `docker compose config` publica `5678:5678`; `docker compose port backend 5678` devolvió `0.0.0.0:5678`. La regla ahora diferencia desarrollo local de producción. | ✅ |
+| `test-backend-route-changes` | Acompañar cambios de rutas con pruebas `TestClient` (backend). | En host, `python -m pytest backend/tests` no pudo iniciar: `No module named pytest`. En la imagen: `docker compose exec backend python -m pytest tests` dio `15 passed, 1 warning`. | ✅ |
+| `test-frontend-utility-changes` | Probar cambios de cálculos financieros con Vitest (`frontend/src/lib`). | En host, `cd frontend && npm test` dio `vitest: not found`. En el contenedor: `docker compose exec frontend npm test` dio `1` archivo y `5` tests pasados. | ✅ |
+| `verify-clean-frontend-dependency-build` | Construir frontend con dependencias instaladas desde cero (Docker). | `docker compose build --no-cache frontend`: terminó correctamente; ejecutó `npm install` y creó la imagen. | ✅ |
+| `verify-dashboard-api-loading-states` | Verificar visualmente carga, éxito y error de API (`frontend/src/App.tsx`). | La regla ahora enumera qué observar y cómo bloquear `/api/metrics`. La página frontend respondió HTTP 200, pero no hay navegador ni automatización browser instalados en esta sesión; no pude inspeccionar los estados renderizados. La comprobación visual queda pendiente. | ✅ Guía clara; ejecución visual no disponible aquí. |
+
+### Hallazgos y comprobaciones pendientes
+
+- CORS autoriza cualquier origen observado, incluso `https://example.invalid`, con credenciales. Para corregirlo, primero listar los orígenes confiables del entorno y si la app necesita credenciales; después sustituir el comodín por esa lista explícita y desactivar credenciales si no hacen falta; por último repetir preflight positivo y negativo. No se modificó `backend/app/main.py`.
+- El período mostrado no coincide con los datos actuales. Elegir si el dashboard debe representar 2024 o el período móvil generado por API; alinear la etiqueta o la generación de datos con esa decisión y repetir la comparación de fechas. No se modificó código.
+- El target del proxy y el servicio coinciden en configuración, pero desde frontend no se alcanza al backend, mientras el acceso directo publicado funciona. Repetir/diagnosticar esta comunicación en un entorno Docker operativo antes de cambiar el target; no se modificó Vite ni Compose.
+- `debugpy` queda publicado en todas las interfaces del host. La configuración es para desarrollo local; antes de usarla en producción, retirar la publicación o documentar una necesidad y controles de red explícitos. No se modificó Docker.
+- El resultado visual de carga y error no se pudo confirmar sin navegador. Los tests frontend cubren utilidades, no el render de `App`.
+
+### Archivos y entorno
+
+Se editaron seis reglas para aclarar fallback, criterios o pasos: `check-mock-data-references-before-changing-data-source.md`, `keep-agent-directory-docs-in-sync.md`, `keep-compose-api-proxy-target-valid.md`, `review-cors-origins-and-credentials-together.md`, `review-debugger-listener-and-port-publication-together.md` y `verify-dashboard-api-loading-states.md`. No se cambió ningún archivo funcional de frontend o backend. Este apartado registra la validación.
+
+El directorio `.agents/` ya aparecía como no versionado en el `git status` inicial; sus reglas se conservaron. Los servicios iniciados para las pruebas se detuvieron con `docker compose down`, sin borrar volúmenes. No se hizo commit.
