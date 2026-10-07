@@ -5,7 +5,7 @@
 Adición o eliminación de carpetas bajo `.agents` y documentación de su estructura.
 
 ## Justificación
-`README.es.md` describe `.agents/rules` y `.agents/skills`, aunque las reglas propuestas señalan que esas carpetas no estaban presentes en el checkout revisado. Una estructura documentada distinta de la real dificulta encontrar las instrucciones.
+`README.es.md` documenta una estructura esperada con `.agents/rules` y `.agents/skills`. En el checkout actual existe `.agents/rules` con 12 archivos y no existe `.agents/skills`; `AGENTS.md` indica que se revisen las reglas y las skills disponibles. La estructura esperada del README no debe confundirse con un inventario de carpetas presentes.
 
 ## Guía específica del proyecto
 - Cuando añadas o retires carpetas bajo `.agents`, actualiza el árbol documentado en `README.es.md` y cualquier estructura equivalente en `README.md`.

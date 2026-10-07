@@ -47,7 +47,7 @@ Se eligió para cada regla una revisión pequeña de su área y se ejecutó su c
 | `review-debugger-listener-and-port-publication-together` | Revisar listener, publicación y necesidad según entorno (debugpy/Compose). | `backend/Dockerfile` escucha en `0.0.0.0:5678`; `docker compose config` publica `5678:5678`; `docker compose port backend 5678` devolvió `0.0.0.0:5678`. La regla ahora diferencia desarrollo local de producción. | ✅ |
 | `test-backend-route-changes` | Acompañar cambios de rutas con pruebas `TestClient` (backend). | En host, `python -m pytest backend/tests` no pudo iniciar: `No module named pytest`. En la imagen: `docker compose exec backend python -m pytest tests` dio `15 passed, 1 warning`. | ✅ |
 | `test-frontend-utility-changes` | Probar cambios de cálculos financieros con Vitest (`frontend/src/lib`). | En host, `cd frontend && npm test` dio `vitest: not found`. En el contenedor: `docker compose exec frontend npm test` dio `1` archivo y `5` tests pasados. | ✅ |
-| `verify-clean-frontend-dependency-build` | Construir frontend con dependencias instaladas desde cero (Docker). | `docker compose build --no-cache frontend`: terminó correctamente; ejecutó `npm install` y creó la imagen. | ✅ |
+| `verify-clean-frontend-dependency-build` | Construir frontend con dependencias instaladas desde cero (Docker), teniendo en cuenta el lockfile. | `frontend/package-lock.json` existe; `frontend/Dockerfile` lo incluye mediante `COPY package*.json ./`. `docker compose build --no-cache frontend` terminó correctamente y ejecutó `npm install`. | ✅ |
 | `verify-dashboard-api-loading-states` | Verificar visualmente carga, éxito y error de API (`frontend/src/App.tsx`). | La regla ahora enumera qué observar y cómo bloquear `/api/metrics`. La página frontend respondió HTTP 200, pero no hay navegador ni automatización browser instalados en esta sesión; no pude inspeccionar los estados renderizados. La comprobación visual queda pendiente. | ✅ Guía clara; ejecución visual no disponible aquí. |
 
 ### Hallazgos y comprobaciones pendientes
@@ -63,3 +63,13 @@ Se eligió para cada regla una revisión pequeña de su área y se ejecutó su c
 Se editaron seis reglas para aclarar fallback, criterios o pasos: `check-mock-data-references-before-changing-data-source.md`, `keep-agent-directory-docs-in-sync.md`, `keep-compose-api-proxy-target-valid.md`, `review-cors-origins-and-credentials-together.md`, `review-debugger-listener-and-port-publication-together.md` y `verify-dashboard-api-loading-states.md`. No se cambió ningún archivo funcional de frontend o backend. Este apartado registra la validación.
 
 El directorio `.agents/` ya aparecía como no versionado en el `git status` inicial; sus reglas se conservaron. Los servicios iniciados para las pruebas se detuvieron con `docker compose down`, sin borrar volúmenes. No se hizo commit.
+
+### Corrección documental posterior
+
+La validación inicial afirmó incorrectamente que no había `frontend/package-lock.json`. El archivo sí existe (su fecha de modificación observada fue el 4 de octubre de 2026); se corrigieron esa afirmación en esta regla y en `proposed-rules.md`. El Dockerfile copia el lockfile antes de instalar dependencias.
+
+### Auditoría documental del checkout
+
+Se contrastaron las afirmaciones de las 12 reglas con cada archivo fuente citado, además de `AGENTS.md`, ambos README, `proposed-rules.md` y la estructura actual. Las afirmaciones técnicas de las reglas coinciden con el código/configuración revisados; los resultados dinámicos previos (proxy HTTP 502, CORS que refleja orígenes y desfase del período) siguen registrados como hallazgos, no como discrepancias documentales.
+
+Se corrigieron dos afirmaciones de estado que ya no correspondían al checkout: `proposed-rules.md` decía que las reglas aún no estaban incorporadas, aunque las 12 existen en `.agents/rules`; y la justificación de `keep-agent-directory-docs-in-sync` describía esas carpetas como ausentes. El README etiqueta su árbol como estructura esperada. Actualmente `.agents/rules` contiene 12 archivos, `.agents/skills` no existe y tampoco existe `memory-bank`; `AGENTS.md` menciona skills disponibles y condiciona la memoria a que exista.

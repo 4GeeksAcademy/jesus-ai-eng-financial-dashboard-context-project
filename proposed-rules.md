@@ -1,6 +1,6 @@
 # Reglas propuestas
 
-Estas reglas se derivan de los hallazgos de [verification.md](verification.md). Son propuestas para revisión; todavía no se han incorporado a `.agents/rules`.
+Estas reglas se derivan de los hallazgos de [verification.md](verification.md) y este documento conserva su análisis de origen. Las 12 reglas están incorporadas en `.agents/rules`; esos archivos son la guía vigente. La estructura del checkout puede cambiar respecto a las observaciones históricas de esta propuesta.
 
 ## Arquitectura
 
@@ -60,13 +60,13 @@ Estas reglas se derivan de los hallazgos de [verification.md](verification.md). 
 
 ### `verify-clean-frontend-dependency-build`
 - **Categoría:** DX / Dependencias
-- **Análisis:** La imagen instala dependencias con `npm install`, el manifiesto usa rangos de versión y no se encontró un lockfile ([frontend/Dockerfile](frontend/Dockerfile#L5), [frontend/package.json](frontend/package.json#L19), [frontend/package.json](frontend/package.json#L39)).
+- **Análisis:** La imagen instala dependencias con `npm install`; `frontend/package.json` declara rangos de versión y `frontend/package-lock.json` fija el árbol resuelto. El Dockerfile copia ambos mediante `COPY package*.json ./` antes de instalar ([frontend/Dockerfile](frontend/Dockerfile#L5), [frontend/package.json](frontend/package.json#L19), [frontend/package.json](frontend/package.json#L39), [frontend/package-lock.json](frontend/package-lock.json)).
 - **Notas / regla:** Al modificar dependencias frontend, comprueba que la imagen se construya desde cero.
 - **Comprobación:** Ejecutar `docker compose build --no-cache frontend`.
 
 ### `keep-agent-directory-docs-in-sync`
 - **Categoría:** Documentación
-- **Análisis:** El README describe `.agents/rules` y `.agents/skills`, pero esas carpetas no estaban presentes en el checkout revisado ([README.es.md](README.es.md#L28)).
+- **Análisis:** El README documenta la estructura esperada `.agents/rules` y `.agents/skills`; `AGENTS.md` pide revisar `.agents/rules` y las skills disponibles. En el checkout actual existe `.agents/rules`, pero no `.agents/skills`; el README describe una estructura objetivo, no el inventario presente ([README.es.md](README.es.md#L28), [AGENTS.md](AGENTS.md#L5)).
 - **Notas / regla:** Al añadir o retirar carpetas bajo `.agents`, actualiza la estructura que documenta el README.
 - **Comprobación:** Comparar el árbol documentado con `find .agents -maxdepth 3 -type f`.
 
